@@ -1,0 +1,17 @@
+CUDA_VISIBLE_DEVICES=0 accelerate launch pe_inversion_unet3d.py \
+    --pretrained_model_name_or_path='/home/wangluozhou/pretrained_models/zeroscope_v2_576w' \
+    --per_gpu_batch_size=1 --gradient_accumulation_steps=1 \
+    --max_train_steps=2 \
+    --width=576 \
+    --height=320 \
+    --num_frames=24 \
+    --checkpointing_steps=100 --checkpoints_total_limit=2 \
+    --learning_rate=1e-1 --lr_warmup_steps=0 \
+    --seed=0 \
+    --validation_steps=1 \
+    --output_dir='/home/wangluozhou/projects/VideoDiffusion_Playground/outputs/cats_play-all-unet3d/' \
+    --validation_file='/home/wangluozhou/projects/VideoDiffusion_Playground/resources/validation_prompts.txt' \
+    --video_path='/home/wangluozhou/projects/VideoDiffusion_Playground/resources/cats_play.mp4' \
+    --pe_size 320 640 1280 \
+    --pe_module down mid up \
+    --mixed_precision="fp16"
