@@ -681,7 +681,7 @@ class VideoDiffPipeline(StableDiffusionControlNetPipeline):
     @torch.no_grad()
     def encode_frames(self, frames, device):
         
-        dtype = next(self.unet.parameters()).dtype
+        dtype = next(self.vae.parameters()).dtype
         frames = self.image_processor.preprocess(frames).to(device=device, dtype=dtype)
         latent_frames = self.vae.encode(frames).latent_dist.sample() * self.vae.config.scaling_factor
         num_frames, channels, height, width = latent_frames.shape
@@ -722,7 +722,7 @@ class VideoDiffPipeline(StableDiffusionControlNetPipeline):
             timesteps=diffuse_timesteps.to(device)
         )
 
-        latents = freq_mix_3d(z_T.to(dtype=dtype), latents_noise, LPF=self.freq_filter)
+        latents = freq_mix_3d(z_T.to(dtype=torch.float32), latents_noise.to(dtype=torch.float32), LPF=self.freq_filter)
         latents = latents.to(dtype)
 
         return latents

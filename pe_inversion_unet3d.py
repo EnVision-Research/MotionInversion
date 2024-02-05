@@ -56,7 +56,7 @@ from diffusers.utils.import_utils import is_xformers_available
 from torch.utils.data import Dataset
 from diffusers.models.embeddings import SinusoidalPositionalEmbedding
 from utils.pe_utils import *
-from pipelines.pipeline_animatediff import load_video, AnimateDiffPipeline
+from pipelines.pipeline_animatediff import load_video, VideoDiffPipeline
 from diffusers.utils import export_to_gif
 
 # Will error if the minimal version of diffusers is not installed. Remove at your own risks.
@@ -223,7 +223,7 @@ def parse_args():
         help="Number of images that should be generated during validation with `validation_prompt`.",
     )
     parser.add_argument(
-        "--num_validation_images",
+        "--num_validation_videos",
         type=int,
         default=1,
         help="Number of images that should be generated during validation with `validation_prompt`.",
@@ -675,14 +675,6 @@ def main():
         eps=args.adam_epsilon,
     )
 
-    # optimizer = optimizer_cls(
-    #     unet.parameters(),
-    #     lr=args.learning_rate,
-    #     betas=(args.adam_beta1, args.adam_beta2),
-    #     weight_decay=args.adam_weight_decay,
-    #     eps=args.adam_epsilon,
-    # )
-
     # check parameters
     if accelerator.is_main_process:
         rec_txt1 = open('rec_para.txt', 'w')
@@ -741,8 +733,8 @@ def main():
 
     # We need to initialize the trackers we use, and also store our configuration.
     # The trackers initializes automatically on the main process.
-    # if accelerator.is_main_process:
-    #     accelerator.init_trackers("PE-Inversion", config=vars(args))
+    if accelerator.is_main_process:
+        accelerator.init_trackers("PE-Inversion", config=vars(args))
 
     # Train!
     total_batch_size = args.per_gpu_batch_size * \
@@ -897,7 +889,7 @@ def main():
                         or (global_step == 1)
                     ):
                         logger.info(
-                            f"Running validation... \n Generating {args.num_validation_images} videos."
+                            f"Running validation... \n Generating {args.num_validation_videos} videos."
                         )
                         # create pipeline
                         if args.use_ema:
@@ -905,7 +897,7 @@ def main():
                             ema_unet.store(unet.parameters())
                             ema_unet.copy_to(unet.parameters())
                         # The models need unwrapping because for compatibility in distributed training mode.
-                        pipeline = AnimateDiffPipeline.from_pretrained(
+                        pipeline = VideoDiffPipeline.from_pretrained(
                             args.pretrained_model_name_or_path,
                             unet=accelerator.unwrap_model(unet), 
                             vae=accelerator.unwrap_model(vae),
@@ -918,7 +910,7 @@ def main():
                             torch_dtype=weight_dtype,
                         )
                         pipeline.scheduler = DDIMScheduler.from_pretrained(args.pretrained_model_name_or_path, subfolder='scheduler')
-                        pipeline = pipeline.to(accelerator.device)
+                        pipeline = pipeline.to(device=accelerator.device)
                         pipeline.set_progress_bar_config(disable=True)
 
                         # run inference
@@ -929,30 +921,39 @@ def main():
                             os.makedirs(val_save_dir)
 
                         with torch.autocast(
-                            str(accelerator.device).replace(":0", ""), enabled=accelerator.mixed_precision == "fp16"
+                            str(accelerator.device).replace(":0", ""), enabled=accelerator.mixed_precision =='fp16'
                         ):
                             # open a validation prompts
                             validation_prompts = read_text_prompts(args.validation_file)
-                            # validation_prompts=["a man is running", "a cat is running", "a dog is running"]
+                            validation_video_frames = load_video(args.video_path)
+                            pipeline.init_filter(
+                                video_length=len(validation_video_frames),
+                                height=validation_video_frames[0].size[1],
+                                width=validation_video_frames[0].size[0],
+                            )
+                            validation_video_latents = pipeline.encode_frames(validation_video_frames, device=accelerator.device)
                             for val_prompt_idx, val_prompt in enumerate(validation_prompts):
                                 num_frames = args.num_frames
-                                video_frames = pipeline(
-                                    prompt="Amazing quality, masterpiece, " + val_prompt,
-                                    height=args.height,
-                                    negative_prompt="bad quality, distortions, unrealistic, distorted image, watermark, signature",
-                                    width=args.width,
-                                    num_frames=num_frames,
-                                    guidance_scale=10.0,
-                                    num_inference_steps=50,
-                                    generator=torch.Generator(device=accelerator.device).manual_seed(args.seed),
-                                ).frames[0]
-                                
-                                prompt_name = val_prompt.replace(' ', '_')
-                                out_file = os.path.join(
-                                    val_save_dir,
-                                    f"step_{global_step}_val_img_{prompt_name}.gif",
-                                )
-                                export_to_gif(video_frames, out_file)
+                                for seed in range(args.num_validation_videos):
+                                    video_frames = pipeline(
+                                        prompt="Amazing quality, masterpiece, " + val_prompt,
+                                        height=validation_video_frames[0].size[1],
+                                        negative_prompt="bad quality, distortions, unrealistic, distorted image, watermark, signature",
+                                        width=validation_video_frames[0].size[0],
+                                        num_frames=len(validation_video_frames),
+                                        guidance_scale=10.0,
+                                        num_inference_steps=50,
+                                        frames_video=validation_video_latents,
+                                        freeinit=True,
+                                        generator=torch.Generator(device=accelerator.device).manual_seed(seed),
+                                    ).frames[0]
+                                    
+                                    prompt_name = val_prompt.replace(' ', '_')
+                                    out_file = os.path.join(
+                                        val_save_dir,
+                                        f"step_{global_step}_val_img_{prompt_name}_seed_{seed}.gif",
+                                    )
+                                    export_to_gif(video_frames, out_file)
 
                         if args.use_ema:
                             # Switch back to the original UNet parameters.
