@@ -23,16 +23,14 @@ HKUST(GZ), HKUST, Kuaishou Technology, Adobe Research.
 
 <h4>Customizing motion of your video with less than 1m parameters and 10 minutes.</h4>
 
-Your content is generally clear and well-structured. I've made some minor grammatical corrections and clarity improvements:
-
 ## 📰 News
 
 * **[2024.03.31]** We have released the project page, arXiv paper, and training code.
 
 ## 🚧 Todo List
 * [x] Released code for the UNet3D model (ZeroScope, ModelScope).
-<!-- * [ ] Release detailed guidance for training and inference.
-* [ ] Release Gradio demo. -->
+* [ ] Release detailed guidance for training and inference.
+* [ ] Release Gradio demo.
 * [ ] Release code for the Sora-like model (Open-Sora, Latte).
 
 
