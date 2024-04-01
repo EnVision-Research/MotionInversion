@@ -26,6 +26,7 @@ HKUST(GZ), HKUST, Kuaishou Technology, Adobe Research.
 ## 📰 News
 
 * **[2024.03.31]** We have released the project page, arXiv paper, and training code.
+* **[2024.04.01]** We will soon release the configuration files, inference code, and motion embedding weights. Please stay tuned for updates!
 
 ## 🚧 Todo List
 * [x] Released code for the UNet3D model (ZeroScope, ModelScope).
