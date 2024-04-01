@@ -21,7 +21,7 @@ HKUST(GZ), HKUST, Kuaishou Technology, Adobe Research.
  we present a novel approach to motion customization in video generation, addressing the widespread gap in the thorough exploration of motion representation within video generative models. Recognizing the unique challenges posed by video's spatiotemporal nature, our method introduces **Motion Embeddings**, a set of explicit, temporally coherent one-dimensional embeddings derived from a given video. These embeddings are designed to integrate seamlessly with the temporal transformer modules of video diffusion models, modulating self-attention computations across frames without compromising spatial integrity.  Furthermore, we identify the **Temporal Discrepancy** in video generative models, which refers to variations in how different motion modules process temporal relationships between frames. We leverage this understanding to optimize the integration of our motion embeddings.
 
 
-<h4>Customizing motion of your video with less than 1m parameters and 10 minutes.</h4>
+<h4>Customize the motion in your videos with less than 0.5 million parameters and under 10 minutes of training time.</h4>
 
 ## 📰 News
 
