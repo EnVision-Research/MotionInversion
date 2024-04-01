@@ -87,15 +87,16 @@ We are grateful for their exceptional work and generous contribution to the open
 
 ## Citation
 
-<!-- ```bibtex
-@software{opensora,
-  author = {Zangwei Zheng and Xiangyu Peng and Yang You},
-  title = {Open-Sora: Democratizing Efficient Video Production for All},
-  month = {March},
-  year = {2024},
-  url = {https://github.com/hpcaitech/Open-Sora}
+ ```bibtex
+@misc{wang2024motion,
+      title={Motion Inversion for Video Customization}, 
+      author={Luozhou Wang and Guibao Shen and Yixun Liang and Xin Tao and Pengfei Wan and Di Zhang and Yijun Li and Yingcong Chen},
+      year={2024},
+      eprint={2403.20193},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV}
 }
-``` -->
+``` 
 
 <!-- ## Star History
 
