@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 from utils.func_utils import tensor_to_vae_latent, sample_noise
 
-def BaseLoss(
+def MotionDistillationLoss(
         train_loss_temporal, 
         accelerator,
         optimizers,
@@ -62,7 +62,11 @@ def BaseLoss(
 
     # optimization
     model_pred = unet(noisy_latents, timesteps, encoder_hidden_states=encoder_hidden_states).sample
-    loss_temporal = F.mse_loss(model_pred.float(), target.float(), reduction="mean")
+    
+    loss_temporal = 0
+    model_pred_reidual = torch.abs(model_pred[:,:,1:,:,:] - model_pred[:,:,:-1,:,:])
+    target_residual = torch.abs(target[:, :, 1:, :, :] - target[:, :, :-1, :, :])
+    loss_temporal = loss_temporal + (1 - F.cosine_similarity(model_pred_reidual, target_residual, dim=2).mean)
 
     avg_loss_temporal = accelerator.gather(loss_temporal.repeat(config.train.train_batch_size)).mean()
     train_loss_temporal += avg_loss_temporal.item() / config.train.gradient_accumulation_steps

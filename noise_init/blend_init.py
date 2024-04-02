@@ -1,10 +1,7 @@
 import torch
 
-from utils.ddim_utils import inverse_video
-
 def initialize_noise_with_blend(noisy_latent, noise=None, seed=0, noise_prior=0.5):
 
-    # noisy_latent = inverse_video(pipe, latents, 50)
     shape = noisy_latent.shape
     if noise is None:
         noise = torch.randn(

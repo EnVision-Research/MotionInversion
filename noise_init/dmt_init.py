@@ -6,11 +6,8 @@ import torch.nn.functional as F
 
 from einops import rearrange
 
-from utils.ddim_utils import inverse_video
 
 def initialize_noise_with_dmt(noisy_latent, noise=None, seed=0, downsample_factor=4, num_frames=24):
-
-    # noisy_latent = inverse_video(pipe, latents, 50)
 
     shape = noisy_latent.shape
     if noise is None:

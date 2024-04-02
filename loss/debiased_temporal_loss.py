@@ -1,7 +1,9 @@
-from utils.lora import extract_lora_child_module
-from utils.func_utils import *
+import torch
+import torch.nn.functional as F
 
-def DebiasLoss(
+from utils.func_utils import tensor_to_vae_latent, sample_noise
+
+def DebiasedTemporalLoss(
         train_loss_temporal,
         accelerator,
         optimizers,

@@ -1,7 +1,10 @@
 import torch
 import random
+import cv2
+import fnmatch
 import torch.nn.functional as F
 from torchvision import transforms
+import torchvision.transforms.functional as TF
 from diffusers.optimization import get_scheduler
 from einops import rearrange, repeat
 from omegaconf import OmegaConf
@@ -9,6 +12,60 @@ from dataset import *
 from models.unet.motion_embeddings import *
 from .lora import *
 from .lora_handler import *
+
+
+def load_video_as_tensor(video_path: str, height: int = None, width: int = None) -> torch.Tensor:
+    """
+    Loads a video from the given path, optionally resizes frames, and returns a tensor of normalized frames.
+
+    Args:
+        video_path (str): The path to the video file.
+        height (int, optional): The desired height for the frames. If None, the original height is used.
+        width (int, optional): The desired width for the frames. If None, the original width is used.
+
+    Returns:
+        torch.Tensor: A tensor of the video frames in the shape [number of frames, channels, height, width].
+    """
+    if not os.path.isfile(video_path):
+        raise ValueError(f"{video_path} is not a valid path to a video file.")
+
+    cap = cv2.VideoCapture(video_path)
+    frames = []
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        frame = PIL.Image.fromarray(frame)
+
+        if height is not None and width is not None:
+            frame = frame.resize((width, height), PIL.Image.ANTIALIAS)
+
+        # Convert to PyTorch tensor and scale pixel values to [0, 1]
+        frame_tensor = TF.to_tensor(frame)
+        frames.append(frame_tensor)
+
+    cap.release()
+
+    # Stack all frame tensors to create a batch
+    frames_tensor = torch.stack(frames)
+
+    # Normalize the batch using the specified mean and std
+    # mean = 0.5  # Equivalent to 127.5/255
+    # std = 1.0  # Since we're normalizing around 1.0, no change needed
+    # frames_tensor = TF.normalize(frames_tensor, [mean, mean, mean], [std, std, std])
+
+    return frames_tensor
+
+def find_videos(directory, extensions=('.mp4', '.mkv', '.avi', '.mov', '.flv', '.wmv', '.gif')):
+    video_files = []
+    for root, dirs, files in os.walk(directory):
+        for extension in extensions:
+            for filename in fnmatch.filter(files, '*' + extension):
+                video_files.append(os.path.join(root, filename))
+    return video_files
 
 def param_optim(model, condition, extra_params=None, is_lora=False, negation=None):
     extra_params = extra_params if len(extra_params.keys()) > 0 else None
@@ -98,7 +155,7 @@ def prepare_optimizers(params, config, **extra_params):
     )
 
     # Insert Spatial LoRAs
-    if config.loss.type == 'DebiasHybrid':
+    if config.loss.type == 'DebiasedHybrid':
         unet_lora_params_spatial_list = extra_params.get('unet_lora_params_spatial_list', [])
         spatial_lora_num = extra_params.get('spatial_lora_num', 1)
 
@@ -153,6 +210,7 @@ def sample_noise(latents, noise_strength, use_offset_noise=False):
 
     return noise_latents
 
+@torch.no_grad()
 def tensor_to_vae_latent(t, vae):
     video_length = t.shape[1]
 
