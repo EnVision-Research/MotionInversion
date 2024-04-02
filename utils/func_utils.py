@@ -314,7 +314,7 @@ def prepare_params(unet, config, train_dataset):
         modules=config.model.motion_embeddings.module
     )
 
-    if config.loss.type == "DebiasHybrid":
+    if config.loss.type == "DebiasedHybrid":
         if config.loss.spatial_lora_num == -1:
             config.loss.spatial_lora_num = train_dataset.__len__()
 

@@ -26,8 +26,8 @@ def extract_frames(input_path, output_path, target_fps, selected_frames):
 
 
 if __name__ == "__main__":
-    input_video_path = "/home/luozhouwang/projects/MotionInversion_source/resources/DAVIS/bmx-bumps.mp4"
-    output_video_path = "/home/luozhouwang/projects/MotionInversion/assets/DAVIS/bmx-bumps-24.mp4"
+    input_video_path = ""
+    output_video_path = ""
     target_fps = 8
     selected_frames = 24
 

@@ -1,7 +1,7 @@
 <!-- <p align="center">
     <img src="./assets/readme/icon.png" width="250"/>
-</p>
-<div align="center">
+</p> -->
+<!-- <div align="center">
     <a href="https://github.com/hpcaitech/Open-Sora/stargazers"><img src="https://img.shields.io/github/stars/hpcaitech/Open-Sora?style=social"></a>
     <a href="https://hpcaitech.github.io/Open-Sora/"><img src="https://img.shields.io/badge/Gallery-View-orange?logo=&amp"></a>
     <a href="https://discord.gg/kZakZzrSUT"><img src="https://img.shields.io/badge/Discord-join-blueviolet?logo=discord&amp"></a>
@@ -68,14 +68,62 @@ python train.py --config ./configs/train_config.yaml
 Stay tuned for training other models and advanced usage!
 
 ## Inference
+After cloning the repository, you can easily load motion embeddings for video generation as follows:
 
-```bash
-python inference.py --config ./configs/inference_config.yaml
+```python
+import torch
+from diffusers import DDIMScheduler, DiffusionPipeline
+from diffusers.utils import export_to_video
+from models.unet.motion_embeddings import load_motion_embeddings
+
+# load video generation model
+pipe = DiffusionPipeline.from_pretrained("cerspense/zeroscope_v2_576w",torch_dtype=torch.float16)
+pipe.enable_model_cpu_offload()
+
+# memory optimization
+pipe.enable_vae_slicing()
+
+# load motion embedding
+motion_embed = torch.load('path/to/motion_embed.pt')
+load_motion_embeddings(pipe.unet, motion_embed)
+
+
+video_frames = pipe(
+    prompt="A knight in armor rides a Segway",
+    num_inference_steps=30,
+    guidance_scale=12,
+    height=320,
+    width=576,
+    num_frames=24,
+    generator=torch.Generator("cuda").manual_seed(42)
+).frames[0]
+
+video_path = export_to_video(video_frames)
+video_path
 ```
+Please note that it is recommended to use a noise initialization strategy for more stable outcomes. This strategy requires a source video as input. Here, we provide an example of its usage:
+```python
+import decord
+from einops import rearrange
+from noise_init import initialize_noise_with_blend
+from utils.func_utils import tensor_to_vae_latent
+from utils.ddim_utils import inverse_video
+import torch
 
-We will also provide a Gradio application in this repository.
+# Set decord's bridge to PyTorch and load video frames
+decord.bridge.set_bridge('torch')
+source_video = decord.VideoReader('path/to/source.mp4', width=576, height=320)[:]
+source_video = (rearrange(source_video, "f h w c -> f c h w").unsqueeze(0) / 127.5 - 1).to(device, dtype=torch.float16)
 
-
+# Convert to VAE latents and initialize noise for improved video generation
+source_latents = tensor_to_vae_latent(source_video, pipe.vae)
+init_latents = initialize_noise_with_blend(inverse_video(pipe, source_latents, 50), seed=0)
+```
+Then you should pass the `init_latents` to `pipe` using the `latents` argument:
+```python
+video_frames = pipe(*,latents=init_latents).frames[0]
+```
+We also offer a variety of noise initialization strategies for you to explore. Click [here](./noise_init/) to dig out more details.
 ## Acknowledgement
 
 * [MotionDirector](https://github.com/showlab/MotionDirector): We followed their implementation of loss design and techniques to reduce computation resources.
