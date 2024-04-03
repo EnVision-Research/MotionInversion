@@ -24,13 +24,13 @@ HKUST(GZ), HKUST, Kuaishou Technology, Adobe Research.
 <h4>Customize the motion in your videos with less than 0.5 million parameters and under 10 minutes of training time.</h4>
 
 ## 📰 News
-* **[2024.04.03]** We release the configuration files, inference code.
+* **[2024.04.03]** We released the configuration files, inference code sample.
 * **[2024.04.01]** We will soon release the configuration files, inference code, and motion embedding weights. Please stay tuned for updates!
 * **[2024.03.31]** We have released the project page, arXiv paper, and training code.
 
 ## 🚧 Todo List
 * [x] Released code for the UNet3D model (ZeroScope, ModelScope).
-* [ ] Release detailed guidance for training and inference.
+* [x] Release detailed guidance for training and inference.
 * [ ] Release Gradio demo.
 * [ ] Release code for the Sora-like model (Open-Sora, Latte).
 
@@ -55,7 +55,7 @@ pip install torch torchvision
 # install diffusers and transformers
 pip install diffusers==0.26.3 transformers==4.27.4
 ```
-
+Also, xformers is required in this repository. Please check [here](https://github.com/facebookresearch/xformers) for detailed installation guidance.
 
 ## Training
 
@@ -101,29 +101,12 @@ video_frames = pipe(
 video_path = export_to_video(video_frames)
 video_path
 ```
-Please note that it is recommended to use a noise initialization strategy for more stable outcomes. This strategy requires a source video as input. Here, we provide an example of its usage:
-```python
-import decord
-from einops import rearrange
-from noise_init import initialize_noise_with_blend
-from utils.func_utils import tensor_to_vae_latent
-from utils.ddim_utils import inverse_video
-import torch
-
-# Set decord's bridge to PyTorch and load video frames
-decord.bridge.set_bridge('torch')
-source_video = decord.VideoReader('path/to/source.mp4', width=576, height=320)[:]
-source_video = (rearrange(source_video, "f h w c -> f c h w").unsqueeze(0) / 127.5 - 1).to(device, dtype=torch.float16)
-
-# Convert to VAE latents and initialize noise for improved video generation
-source_latents = tensor_to_vae_latent(source_video, pipe.vae)
-init_latents = initialize_noise_with_blend(inverse_video(pipe, source_latents, 50), seed=0)
-```
+Please note that it is recommended to use a noise initialization strategy for more stable outcomes. This strategy requires a source video as input. Click [here](./noise_init/) for more details.
 Then you should pass the `init_latents` to `pipe` using the `latents` argument:
 ```python
 video_frames = pipe(*,latents=init_latents).frames[0]
 ```
-We also offer a variety of noise initialization strategies for you to explore. Click [here](./noise_init/) to dig out more details.
+
 ## Acknowledgement
 
 * [MotionDirector](https://github.com/showlab/MotionDirector): We followed their implementation of loss design and techniques to reduce computation resources.
