@@ -24,9 +24,9 @@ HKUST(GZ), HKUST, Kuaishou Technology, Adobe Research.
 <h4>Customize the motion in your videos with less than 0.5 million parameters and under 10 minutes of training time.</h4>
 
 ## 📰 News
-
-* **[2024.03.31]** We have released the project page, arXiv paper, and training code.
+* **[2024.04.03]** We release the configuration files, inference code.
 * **[2024.04.01]** We will soon release the configuration files, inference code, and motion embedding weights. Please stay tuned for updates!
+* **[2024.03.31]** We have released the project page, arXiv paper, and training code.
 
 ## 🚧 Todo List
 * [x] Released code for the UNet3D model (ZeroScope, ModelScope).
