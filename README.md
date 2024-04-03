@@ -1,17 +1,12 @@
-<!-- <p align="center">
-    <img src="./assets/readme/icon.png" width="250"/>
-</p> -->
-<!-- <div align="center">
-    <a href="https://github.com/hpcaitech/Open-Sora/stargazers"><img src="https://img.shields.io/github/stars/hpcaitech/Open-Sora?style=social"></a>
-    <a href="https://hpcaitech.github.io/Open-Sora/"><img src="https://img.shields.io/badge/Gallery-View-orange?logo=&amp"></a>
-    <a href="https://discord.gg/kZakZzrSUT"><img src="https://img.shields.io/badge/Discord-join-blueviolet?logo=discord&amp"></a>
-    <a href="https://join.slack.com/t/colossalaiworkspace/shared_invite/zt-247ipg9fk-KRRYmUl~u2ll2637WRURVA"><img src="https://img.shields.io/badge/Slack-ColossalAI-blueviolet?logo=slack&amp"></a>
-    <a href="https://twitter.com/yangyou1991/status/1769411544083996787?s=61&t=jT0Dsx2d-MS5vS9rNM5e5g"><img src="https://img.shields.io/badge/Twitter-Discuss-blue?logo=twitter&amp"></a>
-    <a href="https://raw.githubusercontent.com/hpcaitech/public_assets/main/colossalai/img/WeChat.png"><img src="https://img.shields.io/badge/微信-小助手加群-green?logo=wechat&amp"></a>
-    <a href="https://hpc-ai.com/blog/open-sora-v1.0"><img src="https://img.shields.io/badge/Open_Sora-Blog-blue"></a>
-</div> -->
-
 ## Motion Inversion for Video Customization
+<p align="center">
+<br>
+    <a href="https://arxiv.org/abs/2403.20193"><img src='https://img.shields.io/badge/arXiv-2403.20193-b31b1b.svg'></a>
+    <a href='https://wileewang.github.io/MotionInversion/'><img src='https://img.shields.io/badge/Project_Page-MotionInversion-blue'></a>
+    <a href='https://huggingface.co/spaces/'><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces(coming soon)-yellow'></a>
+<!--     <a href='https://www.youtube.com/watch?v=Wq93zi8bE3U'><img src='https://img.shields.io/badge/Demo_Video-MotionDirector-red'></a> -->
+<br>
+</p>
 
 [Luozhou Wang](https://wileewang.github.io/), [Guibao Shen](), [Yixun Liang](https://yixunliang.github.io/), [Xin Tao](http://www.xtao.website/), Pengfei Wan, Di Zhang, [Yijun Li](https://yijunmaverick.github.io/), [Yingcong Chen](https://www.yingcong.me)
 
