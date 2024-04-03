@@ -72,7 +72,7 @@ After cloning the repository, you can easily load motion embeddings for video ge
 
 ```python
 import torch
-from diffusers import DDIMScheduler, DiffusionPipeline
+from diffusers import DiffusionPipeline
 from diffusers.utils import export_to_video
 from models.unet.motion_embeddings import load_motion_embeddings
 
