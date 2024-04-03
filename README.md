@@ -58,7 +58,8 @@ To start training, first download the [ZeroScope](https://huggingface.co/cerspen
 ```bash
 python train.py --config ./configs/train_config.yaml
 ```
-We provide a sample config file in [config.py](./configs/config.yaml). Note for various motion types and editing requirements, selecting the appropriate loss function significantly impacts the outcome. In scenarios where only the camera motion from the source video is desired, without the need to retain information about the objects in the source, it is advisable to employ [DebiasedHybridLoss](./loss/debiased_hybrid_loss.py). Similarly, when editing objects that undergo significant deformation, [DebiasedTemporalLoss](./loss/debiased_temporal_loss.py) is recommended. For straightforward cross-categorical editing, as described in [DMT]('https://diffusion-motion-transfer.github.io/'), utilizing [BaseLoss](./loss/base_loss.py) function suffices.
+We provide a sample config file in [config.py](./configs/config.yaml). 
+Note for various motion types and editing requirements, selecting the appropriate loss function impacts the outcome. In scenarios where only the camera motion from the source video is desired, without the need to retain information about the objects in the source, it is advisable to employ [DebiasedHybridLoss](./loss/debiased_hybrid_loss.py). Similarly, when editing objects that undergo significant deformation, [DebiasedTemporalLoss](./loss/debiased_temporal_loss.py) is recommended. For straightforward cross-categorical editing, as described in [DMT]('https://diffusion-motion-transfer.github.io/'), utilizing [BaseLoss](./loss/base_loss.py) function suffices.
 
 ## Inference
 After cloning the repository, you can easily load motion embeddings for video generation as follows:
