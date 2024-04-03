@@ -1,0 +1,63 @@
+model:
+  type: unet
+  pretrained_model_path: /remote-home/lzwang/pretrained_models/zeroscope_v2_576w
+  motion_embeddings:
+    module:
+    - down
+    - up
+    dim:
+    - 1280
+    - 640
+
+train:
+  output_dir: /remote-home/lzwang/projects/public/MotionInversion/outputs/car-roundabout-v1
+  validation_steps: 50
+  checkpointing_steps: 50
+  train_batch_size: 1
+  max_train_steps: 200
+  gradient_accumulation_steps: 1
+  cache_latents: true
+  cached_latent_dir: null
+  logger_type: tensorboard
+  mixed_precision: fp16
+  use_8bit_adam: false
+  resume_from_checkpoint: null
+  resume_step: null
+
+dataset:
+  type:
+  - single_video
+  single_video_path: /remote-home/lzwang/projects/public/MotionInversion/assets/car-roundabout-24.mp4
+  single_video_prompt: ''
+  width: 576
+  height: 320
+  n_sample_frames: 24
+  fps: 8
+  sample_start_idx: 1
+  frame_step: 1
+  use_bucketing: false
+  use_caption: false
+
+loss:
+  type: DebiasedTemporalLoss
+  learning_rate: 0.05
+  lr_scheduler: constant
+  lr_warmup_steps: 0
+ 
+noise_init:
+  type: BlendInit
+  noise_prior: 0.5
+
+val:
+  prompt:
+    - "A skateboard slides along a city lane"
+    - "A knight in armor rides a Segway"
+  negative_prompt: ""
+  sample_preview: true
+  width: 576
+  height: 320
+  num_frames: 24
+  num_inference_steps: 30
+  guidance_scale: 12.0
+  seeds: [42]
+

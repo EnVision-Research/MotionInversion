@@ -1,40 +1,30 @@
 import argparse
-import datetime
 import logging
-import inspect
 import math
 import os
-import random
 import gc
 import copy
 
-from typing import Dict, Optional, Tuple
 from omegaconf import OmegaConf
 
 import torch
-import torch.nn.functional as F
 import torch.utils.checkpoint
 import diffusers
 import transformers
-
-from torchvision import transforms
 from tqdm.auto import tqdm
 
 from accelerate import Accelerator
 from accelerate.logging import get_logger
-from accelerate.utils import set_seed
 
 from models.unet.unet_3d_condition import UNet3DConditionModel
 from diffusers.models import AutoencoderKL
 from diffusers import DDIMScheduler, TextToVideoSDPipeline
-from diffusers.utils.import_utils import is_xformers_available
-from diffusers.models.attention_processor import AttnProcessor2_0, Attention
-from diffusers.models.attention import BasicTransformerBlock
+
 
 from transformers import CLIPTextModel, CLIPTokenizer
-from transformers.models.clip.modeling_clip import CLIPEncoder
-from einops import rearrange, repeat
 from utils.ddim_utils import inverse_video
+from utils.gpu_utils import handle_memory_attention, unet_and_text_g_c
+from utils.func_utils import *
 
 import imageio
 import numpy as np
@@ -42,9 +32,6 @@ import numpy as np
 from dataset import *
 from loss import *
 from noise_init import *
-
-from utils.func_utils import *
-
 
 logger = get_logger(__name__, log_level="INFO")
 
@@ -55,13 +42,11 @@ def log_validation(accelerator, config, batch, global_step, text_prompt, unet, t
         unet_and_text_g_c(unet, text_encoder, False, False)
 
         # handle spatial lora
-        if 'spatial_scale' in config.val.keys():
+        if config.loss.type =='DebiasedHybrid':
             loras = extract_lora_child_module(unet, target_replace_module=["Transformer2DModel"])
             for lora_i in loras:
-                lora_i.scale = config.val.spatial_scale
-        
-        # preset_noise = batch['inversion_noise']
-
+                lora_i.scale = 0
+    
         pipeline = TextToVideoSDPipeline.from_pretrained(
             config.model.pretrained_model_path,
             text_encoder=text_encoder,
@@ -69,22 +54,25 @@ def log_validation(accelerator, config, batch, global_step, text_prompt, unet, t
             unet=unet
         )
 
-        diffusion_scheduler = DDIMScheduler.from_config(pipeline.scheduler.config)
-        pipeline.scheduler = diffusion_scheduler
-
         prompt_list = text_prompt if len(config.val.prompt) <= 0 else config.val.prompt
-        for seed in range(config.val.seed_range[0], config.val.seed_range[1]):
+        for seed in config.val.seeds:
+            noisy_latent = batch['inversion_noise']
+            shape = noisy_latent.shape
+            noise = torch.randn(
+                shape, 
+                device=noisy_latent.device, 
+                generator=torch.Generator(noisy_latent.device).manual_seed(seed)
+            ).to(noisy_latent.dtype)
 
-            config.noise_init.seed = seed
             # handle different noise initialization strategy
-            init_func_name = f'initialize_noise_with_{config.noise_init.type}'
+            init_func_name = f'{config.noise_init.type}'
             # Assuming config.dataset is a DictConfig object
             init_params_dict = OmegaConf.to_container(config.noise_init, resolve=True)
             # Remove the 'type' key
             init_params_dict.pop('type', None)  # 'None' ensures no error if 'type' key doesn't exist
 
             init_func_to_call = globals().get(init_func_name)
-            init_noise = init_func_to_call(batch['inversion_noise'], **init_params_dict)
+            init_noise = init_func_to_call(noisy_latent, noise, **init_params_dict)
 
             for prompt in prompt_list:
                 file_name = f"{prompt.replace(' ', '_')}_seed_{seed}.mp4"
@@ -94,7 +82,7 @@ def log_validation(accelerator, config, batch, global_step, text_prompt, unet, t
 
                 with torch.no_grad():
                     video_frames = pipeline(
-                        prompt=config.val.prompt_prefix + prompt,
+                        prompt=prompt,
                         negative_prompt=config.val.negative_prompt,
                         width=config.val.width,
                         height=config.val.height,
@@ -131,11 +119,8 @@ def export_to_video(video_frames, output_video_path, fps):
     video_writer.close()
 
 def create_output_folders(output_dir, config):
-    # now = datetime.datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
     out_dir = os.path.join(output_dir)
-
     os.makedirs(out_dir, exist_ok=True)
-    # os.makedirs(f"{out_dir}/samples", exist_ok=True)
     OmegaConf.save(config, os.path.join(out_dir, 'config.yaml'))
 
     return out_dir
@@ -149,59 +134,9 @@ def load_primary_models(pretrained_model_path):
 
     return noise_scheduler, tokenizer, text_encoder, vae, unet
 
-def unet_and_text_g_c(unet, text_encoder, unet_enable, text_enable):
-    unet._set_gradient_checkpointing(value=unet_enable)
-    text_encoder._set_gradient_checkpointing(CLIPEncoder, value=text_enable)
-
 def freeze_models(models_to_freeze):
     for model in models_to_freeze:
         if model is not None: model.requires_grad_(False)
-
-def is_attn(name):
-    return ('attn1' or 'attn2' == name.split('.')[-1])
-
-def set_processors(attentions):
-    for attn in attentions: attn.set_processor(AttnProcessor2_0())
-
-def set_torch_2_attn(unet):
-    optim_count = 0
-
-    for name, module in unet.named_modules():
-        if is_attn(name):
-            if isinstance(module, torch.nn.ModuleList):
-                for m in module:
-                    if isinstance(m, BasicTransformerBlock):
-                        set_processors([m.attn1, m.attn2])
-                        optim_count += 1
-    if optim_count > 0:
-        print(f"{optim_count} Attention layers using Scaled Dot Product Attention.")
-
-def handle_memory_attention(enable_xformers_memory_efficient_attention, enable_torch_2_attn, unet):
-    try:
-        is_torch_2 = hasattr(F, 'scaled_dot_product_attention')
-        enable_torch_2 = is_torch_2 and enable_torch_2_attn
-
-        if enable_xformers_memory_efficient_attention and not enable_torch_2:
-            if is_xformers_available():
-                from xformers.ops import MemoryEfficientAttentionFlashAttentionOp
-                unet.enable_xformers_memory_efficient_attention(attention_op=MemoryEfficientAttentionFlashAttentionOp)
-            else:
-                raise ValueError("xformers is not available. Make sure it is installed correctly")
-
-        if enable_torch_2:
-            set_torch_2_attn(unet)
-
-    except:
-        print("Could not enable memory efficient attention for xformers or Torch 2.0.")
-
-def negate_params(name, negation):
-    # We have to do this if we are co-training with LoRA.
-    # This ensures that parameter groups aren't duplicated.
-    if negation is None: return False
-    for n in negation:
-        if n in name and 'temp' not in name:
-            return True
-    return False
 
 def is_mixed_precision(accelerator):
     weight_dtype = torch.float32
@@ -275,39 +210,8 @@ def handle_cache_latents(
         num_workers=0
     )
 
-def enforce_zero_terminal_snr(betas):
-    """
-    Corrects noise in diffusion schedulers.
-    From: Common Diffusion Noise Schedules and Sample Steps are Flawed
-    https://arxiv.org/pdf/2305.08891.pdf
-    """
-    # Convert betas to alphas_bar_sqrt
-    alphas = 1 - betas
-    alphas_bar = alphas.cumprod(0)
-    alphas_bar_sqrt = alphas_bar.sqrt()
-
-    # Store old values.
-    alphas_bar_sqrt_0 = alphas_bar_sqrt[0].clone()
-    alphas_bar_sqrt_T = alphas_bar_sqrt[-1].clone()
-
-    # Shift so the last timestep is zero.
-    alphas_bar_sqrt -= alphas_bar_sqrt_T
-
-    # Scale so the first timestep is back to the old value.
-    alphas_bar_sqrt *= alphas_bar_sqrt_0 / (
-            alphas_bar_sqrt_0 - alphas_bar_sqrt_T
-    )
-
-    # Convert alphas_bar_sqrt to betas
-    alphas_bar = alphas_bar_sqrt ** 2
-    alphas = alphas_bar[1:] / alphas_bar[:-1]
-    alphas = torch.cat([alphas_bar[0:1], alphas])
-    betas = 1 - alphas
-
-    return betas
-
 def should_sample(global_step, validation_steps, validation_data):
-    return global_step % validation_steps == 0 and validation_data.sample_preview
+    return (global_step == 1 or global_step % validation_steps == 0) and validation_data.sample_preview
 
 def save_pipe(
         path,
@@ -318,7 +222,7 @@ def save_pipe(
         vae,
         output_dir,
         is_checkpoint=False,
-        save_pretrained_model=True,
+        save_pretrained_model=False,
         **extra_params
 ):
     if is_checkpoint:
@@ -382,7 +286,7 @@ def main(config):
     # Load primary models
     noise_scheduler, tokenizer, text_encoder, vae, unet = load_primary_models(config.model.pretrained_model_path)
     freeze_models([vae, text_encoder])
-    handle_memory_attention(config.train.enable_xformers_memory_efficient_attention, config.train.enable_torch_2_attn, unet)
+    handle_memory_attention(unet)
 
     train_dataloader, train_dataset = prepare_data(config, tokenizer)
 
@@ -411,7 +315,7 @@ def main(config):
     )
 
     # Additional model setups
-    unet_and_text_g_c(unet, text_encoder, config.train.gradient_checkpointing, config.train.text_encoder_gradient_checkpointing)
+    unet_and_text_g_c(unet, text_encoder)
     vae.enable_slicing()
 
     # Setup for mixed precision training
@@ -424,7 +328,7 @@ def main(config):
 
     # Initialize trackers and store configuration
     if accelerator.is_main_process:
-        accelerator.init_trackers("text2video-fine-tune")
+        accelerator.init_trackers("motion-inversion")
 
     # Train!
     total_batch_size = config.train.train_batch_size * accelerator.num_processes * config.train.gradient_accumulation_steps
@@ -443,7 +347,6 @@ def main(config):
     progress_bar = tqdm(range(global_step, config.train.max_train_steps), disable=not accelerator.is_local_main_process)
     progress_bar.set_description("Steps")
 
-    
     for epoch in range(first_epoch, num_train_epochs):
         train_loss_temporal = 0.0
 
@@ -453,7 +356,6 @@ def main(config):
                 if step % config.train.gradient_accumulation_steps == 0:
                     progress_bar.update(1)
                 continue
-
             with accelerator.accumulate(unet), accelerator.accumulate(text_encoder):
 
                 text_prompt = batch['text_prompt'][0]
@@ -465,8 +367,7 @@ def main(config):
                     if global_step == 0:
                         unet.train()
                         
-                    loss_func_name = f'{config.loss.type}Loss'
-                    loss_func_to_call = globals().get(loss_func_name)
+                    loss_func_to_call = globals().get(f'{config.loss.type}')
 
                     loss_temporal, train_loss_temporal = loss_func_to_call(
                         train_loss_temporal,
@@ -498,30 +399,25 @@ def main(config):
                         vae,
                         output_dir,
                         is_checkpoint=True,
-                        save_pretrained_model=config.train.save_pretrained_model,
                         **extra_params
                     )
 
                 if should_sample(global_step, config.train.validation_steps, config.val):
                     if accelerator.is_main_process:
                         log_validation(
-                            accelerator, 
-                            config,
-                            batch,
-                            global_step,
-                            text_prompt,
-                            unet,
-                            text_encoder,
-                            vae,
-                            output_dir
+                            accelerator=accelerator, 
+                            config=config,
+                            batch=batch,
+                            global_step=global_step,
+                            text_prompt=text_prompt,
+                            unet=unet,
+                            text_encoder=text_encoder,
+                            vae=vae,
+                            output_dir=output_dir,
                         )
-
-
                     unet_and_text_g_c(
                         unet,
-                        text_encoder,
-                        config.train.gradient_checkpointing,
-                        config.train.text_encoder_gradient_checkpointing
+                        text_encoder
                     )
 
             if loss_temporal is not None:
@@ -541,15 +437,13 @@ def main(config):
             text_encoder,
             vae,
             output_dir,
-            is_checkpoint=False,
-            save_pretrained_model=config.train.save_pretrained_model,
             **extra_params
         )
     accelerator.end_training()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, default='./configs/config.yaml')
+    parser.add_argument("--config", type=str, default='/remote-home/lzwang/projects/public/MotionInversion/configs/config.yaml')
     parser.add_argument("--single_video_path", type=str)
     parser.add_argument("--prompts", type=str, help="JSON string of prompts")
     args = parser.parse_args()

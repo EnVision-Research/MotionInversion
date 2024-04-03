@@ -1,3 +1,7 @@
+""" 
+https://arxiv.org/abs/2311.17009
+"""
+
 import math
 
 import torch
@@ -7,15 +11,7 @@ import torch.nn.functional as F
 from einops import rearrange
 
 
-def initialize_noise_with_dmt(noisy_latent, noise=None, seed=0, downsample_factor=4, num_frames=24):
-
-    shape = noisy_latent.shape
-    if noise is None:
-        noise = torch.randn(
-            shape, 
-            device=noisy_latent.device, 
-            generator=torch.Generator(noisy_latent.device).manual_seed(seed)
-        ).to(noisy_latent.dtype)
+def FreqInit(noisy_latent, noise, downsample_factor=4, num_frames=24):
 
     new_h, new_w = (
         noisy_latent.shape[-2] // downsample_factor,

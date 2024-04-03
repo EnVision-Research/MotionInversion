@@ -1,3 +1,7 @@
+""" 
+https://arxiv.org/abs/2312.07537
+"""
+
 import math
 
 import torch
@@ -158,31 +162,18 @@ def init_filter(video_length, height, width, filter_params_method="gaussian", fi
     )
     return freq_filter
 
-def initialize_noise_with_fft(pipe, latents, noise=None, seed=0):
+def FFTInit(noisy_latent, noise):
 
-    shape = latents.shape
-    if noise is None:
-        noise = torch.randn(
-            shape, 
-            device=latents.device, 
-            generator=torch.Generator(latents.device).manual_seed(seed)
-        ).to(latents.dtype)
-
-    pipe.scheduler.set_timesteps(30, device=latents.device)
-    timesteps = pipe.scheduler.timesteps
-    
-    noisy_latents = pipe.scheduler.add_noise(latents, noise, timesteps[:1])
-
-    dtype = noisy_latents.dtype
+    dtype = noisy_latent.dtype
     freq_filter = init_filter(
-        video_length=noisy_latents.shape[2],
-        height=noisy_latents.shape[3],
-        width=noisy_latents.shape[4],
-        device=noisy_latents.device
+        video_length=noisy_latent.shape[2],
+        height=noisy_latent.shape[3],
+        width=noisy_latent.shape[4],
+        device=noisy_latent.device
     )
 
     # make it float32 to accept any kinds of resolution
-    latents = freq_mix_3d(noisy_latents.to(dtype=torch.float32), noise.to(dtype=torch.float32), LPF=freq_filter)
+    latents = freq_mix_3d(noisy_latent.to(dtype=torch.float32), noise.to(dtype=torch.float32), LPF=freq_filter)
     latents = latents.to(dtype)
 
     return latents

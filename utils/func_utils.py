@@ -13,52 +13,6 @@ from models.unet.motion_embeddings import *
 from .lora import *
 from .lora_handler import *
 
-
-def load_video_as_tensor(video_path: str, height: int = None, width: int = None) -> torch.Tensor:
-    """
-    Loads a video from the given path, optionally resizes frames, and returns a tensor of normalized frames.
-
-    Args:
-        video_path (str): The path to the video file.
-        height (int, optional): The desired height for the frames. If None, the original height is used.
-        width (int, optional): The desired width for the frames. If None, the original width is used.
-
-    Returns:
-        torch.Tensor: A tensor of the video frames in the shape [number of frames, channels, height, width].
-    """
-    if not os.path.isfile(video_path):
-        raise ValueError(f"{video_path} is not a valid path to a video file.")
-
-    cap = cv2.VideoCapture(video_path)
-    frames = []
-
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
-
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        frame = PIL.Image.fromarray(frame)
-
-        if height is not None and width is not None:
-            frame = frame.resize((width, height), PIL.Image.ANTIALIAS)
-
-        # Convert to PyTorch tensor and scale pixel values to [0, 1]
-        frame_tensor = TF.to_tensor(frame)
-        frames.append(frame_tensor)
-
-    cap.release()
-
-    # Stack all frame tensors to create a batch
-    frames_tensor = torch.stack(frames)
-
-    # Normalize the batch using the specified mean and std
-    # mean = 0.5  # Equivalent to 127.5/255
-    # std = 1.0  # Since we're normalizing around 1.0, no change needed
-    # frames_tensor = TF.normalize(frames_tensor, [mean, mean, mean], [std, std, std])
-
-    return frames_tensor
-
 def find_videos(directory, extensions=('.mp4', '.mkv', '.avi', '.mov', '.flv', '.wmv', '.gif')):
     video_files = []
     for root, dirs, files in os.walk(directory):
@@ -141,10 +95,7 @@ def prepare_optimizers(params, config, **extra_params):
 
     optimizer_temporal = optimizer_cls(
         params,
-        lr=config.loss.learning_rate,
-        betas=(config.loss.adam_beta1, config.loss.adam_beta2),
-        weight_decay=config.loss.adam_weight_decay,
-        eps=config.loss.adam_epsilon,
+        lr=config.loss.learning_rate
     )
 
     lr_scheduler_temporal = get_scheduler(
@@ -176,10 +127,7 @@ def prepare_optimizers(params, config, **extra_params):
                     ], 
                     config.loss.learning_rate_spatial
                 ),
-                lr=config.loss.learning_rate_spatial,
-                betas=(config.loss.adam_beta1, config.loss.adam_beta2),
-                weight_decay=config.loss.adam_weight_decay,
-                eps=config.loss.adam_epsilon,
+                lr=config.loss.learning_rate_spatial
             )
             optimizer_spatial_list.append(optimizer_spatial)
 
@@ -221,41 +169,6 @@ def tensor_to_vae_latent(t, vae):
 
     return latents
 
-def extend_datasets(datasets, dataset_items, extend=False):
-    biggest_data_len = max(x.__len__() for x in datasets)
-    extended = []
-    for dataset in datasets:
-        if dataset.__len__() == 0:
-            del dataset
-            continue
-        if dataset.__len__() < biggest_data_len:
-            for item in dataset_items:
-                if extend and item not in extended and hasattr(dataset, item):
-                    print(f"Extending {item}")
-
-                    value = getattr(dataset, item)
-                    value *= biggest_data_len
-                    value = value[:biggest_data_len]
-
-                    setattr(dataset, item, value)
-
-                    print(f"New {item} dataset length: {dataset.__len__()}")
-                    extended.append(item)
-
-def get_train_dataset(dataset_types, train_data, tokenizer):
-    train_datasets = []
-
-    # Loop through all available datasets, get the name, then add to list of data to process.
-    for DataSet in [VideoJsonDataset, SingleVideoDataset, ImageDataset, VideoFolderDataset]:
-        for dataset in dataset_types:
-            if dataset == DataSet.__getname__():
-                train_datasets.append(DataSet(**train_data, tokenizer=tokenizer))
-
-    if len(train_datasets) > 0:
-        return train_datasets
-    else:
-        raise ValueError("Dataset type not found: 'json', 'single_video', 'folder', 'image'")
-
 def prepare_data(config, tokenizer):
     # Get the training dataset based on types (json, single_video, image)
 
@@ -265,36 +178,19 @@ def prepare_data(config, tokenizer):
     # Remove the 'type' key
     dataset_params_dict.pop('type', None)  # 'None' ensures no error if 'type' key doesn't exist
 
-    train_datasets = get_train_dataset(config.dataset.type, dataset_params_dict, tokenizer)
+    train_datasets = []
 
-    # If you have extra train data, you can add a list of however many you would like.
-    # Eg: extra_train_data: [{: {dataset_types, train_data: {etc...}}}]
-    try:
-        if config.train.extra_train_data is not None and len(config.train.extra_train_data) > 0:
-            for dataset in config.train.extra_train_data:
-                d_t = dataset.type
-                # Assuming config.dataset is a DictConfig object
-                dataset_params_dict = OmegaConf.to_container(dataset, resolve=True)
+    # Loop through all available datasets, get the name, then add to list of data to process.
+    for DataSet in [VideoJsonDataset, SingleVideoDataset, ImageDataset, VideoFolderDataset]:
+        for dataset in config.dataset.type:
+            if dataset == DataSet.__getname__():
+                train_datasets.append(DataSet(**dataset_params_dict, tokenizer=tokenizer))
 
-                # Remove the 'type' key
-                dataset_params_dict.pop('type', None)  # 'None' ensures no error if 'type' key doesn't exist
-                t_d = dataset_params_dict
-                train_datasets += get_train_dataset(d_t, t_d, tokenizer)
+    if len(train_datasets) < 0:
+        raise ValueError("Dataset type not found: 'json', 'single_video', 'folder', 'image'")
+        
+    train_dataset = train_datasets[0]
 
-    except Exception as e:
-        print(f"Could not process extra train datasets due to an error : {e}")
-
-    # Extend datasets that are less than the greatest one. This allows for more balanced training.
-    attrs = ['train_data', 'frames', 'image_dir', 'video_files']
-    extend_datasets(train_datasets, attrs, extend=config.train.extend_dataset)
-
-    # Process one dataset
-    if len(train_datasets) == 1:
-        train_dataset = train_datasets[0]
-
-    # Process many datasets
-    else:
-        train_dataset = torch.utils.data.ConcatDataset(train_datasets)
 
     train_dataloader = torch.utils.data.DataLoader(
         train_dataset,
@@ -320,11 +216,11 @@ def prepare_params(unet, config, train_dataset):
 
         lora_managers_spatial, unet_lora_params_spatial_list, unet_negation_all = inject_spatial_loras(
             unet=unet, 
-            use_unet_lora=config.loss.use_unet_lora,
-            lora_unet_dropout=config.loss.lora_unet_dropout,
-            lora_path=config.loss.lora_path,
-            lora_rank=config.loss.lora_rank,
-            spatial_lora_num=config.loss.spatial_lora_num,
+            use_unet_lora=True,
+            lora_unet_dropout=0.1,
+            lora_path='',
+            lora_rank=32,
+            spatial_lora_num=1,
         )
         
         extra_params['lora_managers_spatial'] = lora_managers_spatial

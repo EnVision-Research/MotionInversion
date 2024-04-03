@@ -17,11 +17,11 @@ def DebiasedHybridLoss(
         noise_scheduler, 
         batch,
         step,
-        config
+        config,
+        random_hflip_img=False,
+        spatial_lora_num=1
     ):
     mask_spatial_lora = random.uniform(0, 1) < 0.2
-    random_hflip_img = config.loss.random_hflip_img
-    spatial_lora_num = config.loss.spatial_lora_num
     cache_latents = config.train.cache_latents
 
 
