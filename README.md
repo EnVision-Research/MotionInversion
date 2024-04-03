@@ -1,4 +1,5 @@
 ## Motion Inversion for Video Customization
+<h4>Customize the motion in your videos with less than 0.5 million parameters and under 10 minutes of training time.</h4>
 <br>
     <a href="https://arxiv.org/abs/2403.20193"><img src='https://img.shields.io/badge/arXiv-2403.20193-b31b1b.svg'></a>
     <a href='https://wileewang.github.io/MotionInversion/'><img src='https://img.shields.io/badge/Project_Page-MotionInversion-blue'></a>
@@ -11,10 +12,10 @@
 HKUST(GZ), HKUST, Kuaishou Technology, Adobe Research.
 
 
- we present a novel approach to motion customization in video generation, addressing the widespread gap in the thorough exploration of motion representation within video generative models. Recognizing the unique challenges posed by video's spatiotemporal nature, our method introduces **Motion Embeddings**, a set of explicit, temporally coherent one-dimensional embeddings derived from a given video. These embeddings are designed to integrate seamlessly with the temporal transformer modules of video diffusion models, modulating self-attention computations across frames without compromising spatial integrity.  Furthermore, we identify the **Temporal Discrepancy** in video generative models, which refers to variations in how different motion modules process temporal relationships between frames. We leverage this understanding to optimize the integration of our motion embeddings.
+We present a novel approach to motion customization in video generation, addressing the widespread gap in the thorough exploration of motion representation within video generative models. Recognizing the unique challenges posed by video's spatiotemporal nature, our method introduces **Motion Embeddings**, a set of explicit, temporally coherent one-dimensional embeddings derived from a given video. These embeddings are designed to integrate seamlessly with the temporal transformer modules of video diffusion models, modulating self-attention computations across frames without compromising spatial integrity.  Furthermore, we identify the **Temporal Discrepancy** in video generative models, which refers to variations in how different motion modules process temporal relationships between frames. We leverage this understanding to optimize the integration of our motion embeddings.
 
 
-<h4>Customize the motion in your videos with less than 0.5 million parameters and under 10 minutes of training time.</h4>
+
 
 ## 📰 News
 * **[2024.04.03]** We released the configuration files, inference code sample.
