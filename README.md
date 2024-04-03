@@ -1,12 +1,10 @@
 ## Motion Inversion for Video Customization
-<p align="center">
 <br>
     <a href="https://arxiv.org/abs/2403.20193"><img src='https://img.shields.io/badge/arXiv-2403.20193-b31b1b.svg'></a>
     <a href='https://wileewang.github.io/MotionInversion/'><img src='https://img.shields.io/badge/Project_Page-MotionInversion-blue'></a>
     <a href='https://huggingface.co/spaces/'><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces(coming soon)-yellow'></a>
 <!--     <a href='https://www.youtube.com/watch?v=Wq93zi8bE3U'><img src='https://img.shields.io/badge/Demo_Video-MotionDirector-red'></a> -->
 <br>
-</p>
 
 [Luozhou Wang](https://wileewang.github.io/), [Guibao Shen](), [Yixun Liang](https://yixunliang.github.io/), [Xin Tao](http://www.xtao.website/), Pengfei Wan, Di Zhang, [Yijun Li](https://yijunmaverick.github.io/), [Yingcong Chen](https://www.yingcong.me)
 
