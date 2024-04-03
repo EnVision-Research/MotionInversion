@@ -1,6 +1,6 @@
 model:
   type: unet
-  pretrained_model_path: /remote-home/lzwang/pretrained_models/zeroscope_v2_576w
+  pretrained_model_path: cerspense/zeroscope_v2_576w
   motion_embeddings:
     module:
     - down
@@ -10,7 +10,7 @@ model:
     - 640
 
 train:
-  output_dir: /remote-home/lzwang/projects/public/MotionInversion/outputs/car-roundabout-v1
+  output_dir: ./outputs/
   validation_steps: 50
   checkpointing_steps: 50
   train_batch_size: 1
@@ -27,7 +27,7 @@ train:
 dataset:
   type:
   - single_video
-  single_video_path: /remote-home/lzwang/projects/public/MotionInversion/assets/car-roundabout-24.mp4
+  single_video_path: ./assets/car-roundabout-24.mp4
   single_video_prompt: ''
   width: 576
   height: 320
@@ -51,7 +51,6 @@ noise_init:
 val:
   prompt:
     - "A skateboard slides along a city lane"
-    - "A knight in armor rides a Segway"
   negative_prompt: ""
   sample_preview: true
   width: 576
