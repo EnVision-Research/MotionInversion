@@ -47,7 +47,7 @@ We present a novel approach to motion customization in video generation, address
 pip install torch torchvision
 
 # install diffusers and transformers
-pip install diffusers==0.26.3 transformers==4.27.4
+pip install diffusers==0.26.3 transformers
 ```
 Also, xformers is required in this repository. Please check [here](https://github.com/facebookresearch/xformers) for detailed installation guidance.
 
