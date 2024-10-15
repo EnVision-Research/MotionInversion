@@ -7,10 +7,11 @@
 <!--     <a href='https://www.youtube.com/watch?v=Wq93zi8bE3U'><img src='https://img.shields.io/badge/Demo_Video-MotionDirector-red'></a> -->
 <br>
 
-[Luozhou Wang](https://wileewang.github.io/), [Guibao Shen](), [Yixun Liang](https://yixunliang.github.io/), [Xin Tao](http://www.xtao.website/), Pengfei Wan, Di Zhang, [Yijun Li](https://yijunmaverick.github.io/), [Yingcong Chen](https://www.yingcong.me)
+[Luozhou Wang*](https://wileewang.github.io/), [Ziyang Mai*](https://ziyang1106.github.io/), [Guibao Shen](), [Yixun Liang](https://yixunliang.github.io/), [Xin Tao](http://www.xtao.website/), Pengfei Wan, Di Zhang, [Yijun Li](https://yijunmaverick.github.io/), [Yingcong Chen†](https://www.yingcong.me)
 
 HKUST(GZ), HKUST, Kuaishou Technology, Adobe Research.
 
+*Indicates Equal Contribution. †Indicates Corresponding Author.
 
 We present a novel approach to motion customization in video generation, addressing the widespread gap in the thorough exploration of motion representation within video generative models. Recognizing the unique challenges posed by video's spatiotemporal nature, our method introduces **Motion Embeddings**, a set of explicit, temporally coherent one-dimensional embeddings derived from a given video. These embeddings are designed to integrate seamlessly with the temporal transformer modules of video diffusion models, modulating self-attention computations across frames without compromising spatial integrity.  Furthermore, we identify the **Temporal Discrepancy** in video generative models, which refers to variations in how different motion modules process temporal relationships between frames. We leverage this understanding to optimize the integration of our motion embeddings.
 
@@ -18,12 +19,13 @@ We present a novel approach to motion customization in video generation, address
 
 
 ## 📰 News
+* **[2024.10.15]** We improve the structure of motion embedding and obtain better performance. Check our latest [paper](https://arxiv.org/abs/2403.20193).
 * **[2024.04.03]** We released the configuration files, inference code sample.
 * **[2024.04.01]** We will soon release the configuration files, inference code, and motion embedding weights. Please stay tuned for updates!
 * **[2024.03.31]** We have released the project page, arXiv paper, and training code.
 
 ## 🚧 Todo List
-* [x] Released code for the UNet3D model (ZeroScope, ModelScope).
+* [x] Released code for the UNet3D model (ZeroScope, ModelScope, VideoCrafter2).
 * [x] Release detailed guidance for training and inference.
 * [ ] Release Gradio demo.
 * [ ] Release code for the Sora-like model (Open-Sora, Latte).
@@ -108,6 +110,8 @@ video_frames = pipe(*,latents=init_latents).frames[0]
 * [AnimateDiff](https://github.com/guoyww/animatediff/): The pretrained video checkpoint we used in our main paper.
 * [Latte](https://github.com/Vchitect/Latte): A video generation model with a similar architecture to Sora.
 * [Open-Sora](https://github.com/hpcaitech/Open-Sora): A video generation model with a similar architecture to Sora.
+* [VideoCrafter2](https://github.com/AILab-CVC/VideoCrafter): A video generation model with a similar architect ure to ZeroScope and stronger ability for high-quality generation.
+* [VideoCrafter2 (diffuser checkpoint)](https://hf-mirror.com/adamdad/videocrafterv2_diffusers): A checkpoint file that can seamlessly integrate in our framework with one line code.
 
 We are grateful for their exceptional work and generous contribution to the open-source community.
 

@@ -2,19 +2,35 @@ model:
   type: unet
   pretrained_model_path: cerspense/zeroscope_v2_576w
   motion_embeddings:
-    module:
-    - down
-    - up
-    dim:
-    - 1280
-    - 640
-
+    combinations:
+    - - down
+      - 1280
+    # - - down
+    #   - 640
+    # - - up
+    #   - 640
+    - - up
+      - 1280
+    vcombinations:
+    - - down
+      - 1280
+    # - - down
+    #   - 640
+    # - - up
+    #   - 640
+    - - up
+      - 1280
+    spatial: false
+  # the unet can be either videoCrafter2 or zeroscope_v2_576w, the former produces better video quality
+  unet: videoCrafter2
+      
 train:
-  output_dir: ./outputs/
-  validation_steps: 50
+  output_dir: ./results
+  validation_steps: 2000
   checkpointing_steps: 50
+  checkpointing_start: 250
   train_batch_size: 1
-  max_train_steps: 200
+  max_train_steps: 1000
   gradient_accumulation_steps: 1
   cache_latents: true
   cached_latent_dir: null
@@ -28,7 +44,7 @@ dataset:
   type:
   - single_video
   single_video_path: ./assets/car-roundabout-24.mp4
-  single_video_prompt: ''
+  single_video_prompt: 'A car turnaround in a city street'
   width: 576
   height: 320
   n_sample_frames: 24
@@ -39,10 +55,19 @@ dataset:
   use_caption: false
 
 loss:
-  type: DebiasedTemporalLoss
-  learning_rate: 0.05
+  type: BaseLoss
+  learning_rate: 0.02
   lr_scheduler: constant
   lr_warmup_steps: 0
+
+# loss:
+#   type: DebiasedHybridLoss
+#   learning_rate: 0.02
+#   learning_rate_spatial: 5e-4
+#   lr_scheduler: constant
+#   lr_warmup_steps: 0
+#   spatial_lora_num: -1
+#   use_unet_lora: true
  
 noise_init:
   type: BlendInit
@@ -58,5 +83,9 @@ val:
   num_frames: 24
   num_inference_steps: 30
   guidance_scale: 12.0
-  seeds: [42]
+  seeds: [0]
 
+strategy:
+  # during training, the debiasing operaion will not be applied
+  vSpatial_frameSubtraction: false
+  removeMFromV: false
