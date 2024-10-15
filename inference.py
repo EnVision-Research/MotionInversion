@@ -14,14 +14,13 @@ from omegaconf import OmegaConf
 def get_pipe(embedding_dir='baseline',config=None,noisy_latent=None, video_round=None):
 
     # load video generation model
-    pipe = DiffusionPipeline.from_pretrained("cerspense/zeroscope_v2_576w",torch_dtype=torch.float16)
+    pipe = DiffusionPipeline.from_pretrained(config.model.pretrained_model_path,torch_dtype=torch.float16)
 
     # use videocrafterv2 unet
     if config.model.unet == 'videoCrafter2':
         from models.unet.unet_3d_condition import UNet3DConditionModel
         # unet = UNet3DConditionModel.from_pretrained("adamdad/videocrafterv2_diffusers",subfolder='unet',torch_dtype=torch.float16)
         unet = UNet3DConditionModel.from_pretrained("adamdad/videocrafterv2_diffusers",torch_dtype=torch.float16)
-        
         pipe.unet = unet
 
     # pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
@@ -79,15 +78,13 @@ def inference(embedding_dir='vanilla',
     pipe, config, noisy_latent = get_pipe(embedding_dir=embedding_dir,config=config,noisy_latent=noisy_latent,video_round=video_round)
     n_frames = config.val.num_frames
 
-    all_video_frames = []
     shape = (config.val.height,config.val.width)
     os.makedirs(save_dir,exist_ok=True)
     for prompt in prompts:
 
         cur_save_dir = f'{save_dir}/{"_".join(prompt.split())}.mp4'
 
-        
-        register_attention_control(pipe.unet, None,config=config)
+        register_attention_control(pipe.unet,config=config)
 
         if noisy_latent is not None:
             torch.manual_seed(seed)
@@ -110,8 +107,6 @@ def inference(embedding_dir='vanilla',
 
         video_path = export_to_video(video_frames,output_video_path=cur_save_dir,fps=8)
         print(video_path)
-        all_video_frames.append(video_frames)
-    return all_video_frames
 
 
 if __name__ =="__main__":

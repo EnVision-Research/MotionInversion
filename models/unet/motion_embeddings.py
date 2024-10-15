@@ -159,74 +159,26 @@ def inject_motion_embeddings(model, combinations=None, config=None):
     shape16 = np.ceil(spatial_shape/16).astype(int)
     spatial_name = 'vSpatial'
     replacement_dict = {}
-    
+    # support for 32 frames
+    max_seq_length = 32
     inject_layers = []
     for name, module in model.named_modules():
         
-        # check if the module is temp_attention or spatial_attention
+        # check if the module is temp_attention
         PETemporal = '.temp_attentions.' in name
 
         if not(PETemporal and re.search(r'transformer_blocks\.\d+$', name)):
             continue
 
-
         if not ([name.split('_')[0], module.norm1.normalized_shape[0]] in combinations):
             continue
-
         
-        if PETemporal:
-            # support for 32 frames
-            max_seq_length = 32
-
-        if config.model.motion_embeddings.spatial is False:
-            replacement_dict[f'{name}.pos_embed'] = MotionEmbedding(max_seq_length=max_seq_length, embed_dim=module.norm1.normalized_shape[0]).to(dtype=model.dtype, device=model.device)
-        else:
-            assert (config.strategy.PESpatial and config.model.motion_embeddings.spatial) == False, "PE spatial and spatial motion embeddings cannot be used together yet"
-            pattern = r'(\d+)\.temp_attentions'
-            match = re.search(pattern, name)
-            place_in_net = name.split('_')[0]
-            if not match:
-                continue
-            index_in_net = match.group(1)
-
-            if place_in_net == 'up':
-                if index_in_net == "1":
-                    h, w = shape32
-                elif index_in_net == "2":
-                    h, w = shape16
-                else:
-                    continue
-            elif place_in_net == 'down':
-                if index_in_net == "1":
-                    h, w = shape16
-                elif index_in_net == "2":
-                    h, w = shape32
-                else:
-                    continue
-            else:
-                continue
-
-            replacement_dict[f'{name}.pos_embed'] = MotionEmbedding(wh=h*w, max_seq_length=max_seq_length, embed_dim=module.norm1.normalized_shape[0]).to(dtype=model.dtype, device=model.device)
-        
-    max_seq_length = 32
-    candidate_modules = {}
-    for name, module in model.named_modules():
-        # check if the module is temp_attention or spatial_attention
-        PETemporal ='.temp_attentions.' in name
-
-        if not (PETemporal and re.search(r'transformer_blocks\.\d+$', name)):
-            continue
-
-        if not ([name.split('_')[0], module.norm1.normalized_shape[0]] in combinations):
-            continue   
-        
-        candidate_modules[f'{name}.pos_embed'] = module.norm1.normalized_shape[0]
-        
-    # replacement_keys = list(replacement_dict.keys())
-    replacement_keys = list(set(candidate_modules.keys()))
+        replacement_dict[f'{name}.pos_embed'] = MotionEmbedding(max_seq_length=max_seq_length, embed_dim=module.norm1.normalized_shape[0]).to(dtype=model.dtype, device=model.device)
+         
+    replacement_keys = list(set(replacement_dict.keys()))
     temp_attn_list =    [name.replace('pos_embed','attn1') for name in replacement_keys] + \
                         [name.replace('pos_embed','attn2') for name in replacement_keys]
-    embed_dims = [candidate_modules[replacement_keys[i]] for i in range(len(replacement_keys))]
+    embed_dims = [replacement_dict[replacement_keys[i]].embed.shape[2] for i in range(len(replacement_keys))]
     
     for temp_attn_index,temp_attn in enumerate(temp_attn_list):
         place_in_net = temp_attn.split('_')[0]
@@ -265,7 +217,7 @@ def inject_motion_embeddings(model, combinations=None, config=None):
 
     inject_layers = list(set(inject_layers))
     for name in inject_layers:
-        print(f"Injecting motion qk embedding at {name}")
+        print(f"Injecting motion embedding at {name}")
 
     parameters_list = []
     for name, para in model.named_parameters():

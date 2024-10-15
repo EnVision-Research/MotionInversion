@@ -11,26 +11,16 @@ model:
     #   - 640
     - - up
       - 1280
-    vcombinations:
-    - - down
-      - 1280
-    # - - down
-    #   - 640
-    # - - up
-    #   - 640
-    - - up
-      - 1280
-    spatial: false
-  # the unet can be either videoCrafter2 or zeroscope_v2_576w, the former produces better video quality
+  # unet can be either 'videoCrafter2' or 'zeroscope_v2_576w', the former produces better video quality
   unet: videoCrafter2
       
 train:
   output_dir: ./results
   validation_steps: 2000
   checkpointing_steps: 50
-  checkpointing_start: 250
+  checkpointing_start: 200
   train_batch_size: 1
-  max_train_steps: 1000
+  max_train_steps: 400
   gradient_accumulation_steps: 1
   cache_latents: true
   cached_latent_dir: null

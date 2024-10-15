@@ -360,7 +360,7 @@ def main(config):
     progress_bar.set_description("Steps")
 
     # Register the attention control, for Motion Value Embedding(s)
-    register_attention_control(unet, None, config=config)
+    register_attention_control(unet, config=config)
     for epoch in range(first_epoch, num_train_epochs):
         train_loss_temporal = 0.0
 
