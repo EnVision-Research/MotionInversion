@@ -1,5 +1,5 @@
 ## Motion Inversion for Video Customization
-<h4>Customize the motion in your videos with less than 0.5 million parameters and under 10 minutes of training time.</h4>
+<h4>Customize the motion in your videos under 10 minutes of training time.</h4>
 <br>
     <a href="https://arxiv.org/abs/2403.20193"><img src='https://img.shields.io/badge/arXiv-2403.20193-b31b1b.svg'></a>
     <a href='https://wileewang.github.io/MotionInversion/'><img src='https://img.shields.io/badge/Project_Page-MotionInversion-blue'></a>
@@ -58,7 +58,7 @@ We provide a sample config file in [config.py](./configs/config.yaml).
 Note for various motion types and editing requirements, selecting the appropriate loss function impacts the outcome. In scenarios where only the camera motion from the source video is desired, without the need to retain information about the objects in the source, it is advisable to employ [DebiasedHybridLoss](./loss/debiased_hybrid_loss.py). Similarly, when editing objects that undergo significant deformation, [DebiasedTemporalLoss](./loss/debiased_temporal_loss.py) is recommended. For straightforward cross-categorical editing, as described in [DMT]('https://diffusion-motion-transfer.github.io/'), utilizing [BaseLoss](./loss/base_loss.py) function suffices.
 
 ## Inference
-After cloning the repository, you can easily load motion embeddings for video generation as follows:
+After training, you can easily load motion embeddings for video generation as follows:
 
 ```
 python inference.py
