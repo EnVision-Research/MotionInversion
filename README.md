@@ -15,6 +15,8 @@ HKUST(GZ), HKUST, Kuaishou Technology, Adobe Research.
 
 In this work, we present a novel approach for motion customization in video generation, addressing the widespread gap in the exploration of motion representation within video generative models. Recognizing the unique challenges posed by the spatiotemporal nature of video, our method introduces **Motion Embeddings**, a set of explicit, temporally coherent embeddings derived from a given video. These embeddings are designed to integrate seamlessly with the temporal transformer modules of video diffusion models, modulating self-attention computations across frames without compromising spatial integrity. Our approach provides a compact and efficient solution to motion representation, utilizing two types of embeddings: a **Motion Query-Key Embedding** to modulate the temporal attention map and a **Motion Value Embedding** to modulate the attention values. Additionally, we introduce an inference strategy that excludes spatial dimensions from the Motion Query-Key Embedding and applies a differential operation to the Motion Value Embedding, both designed to debias appearance and ensure the embeddings focus solely on motion. Our contributions include the introduction of a tailored motion embedding for customization tasks and a demonstration of the practical advantages and effectiveness of our method through extensive experiments.
 
+<!-- insert a teaser gif -->
+![](assets/mi.gif)
 
 ## 📰 News
 * **[2024.10.15]** We improve the structure of motion embedding and obtain better performance. Check our latest [paper](https://arxiv.org/abs/2403.20193).
@@ -82,13 +84,14 @@ We are grateful for their exceptional work and generous contribution to the open
 ## Citation
 
  ```bibtex
-@misc{wang2024motion,
+@misc{wang2024motioninversionvideocustomization,
       title={Motion Inversion for Video Customization}, 
-      author={Luozhou Wang and Guibao Shen and Yixun Liang and Xin Tao and Pengfei Wan and Di Zhang and Yijun Li and Yingcong Chen},
+      author={Luozhou Wang and Ziyang Mai and Guibao Shen and Yixun Liang and Xin Tao and Pengfei Wan and Di Zhang and Yijun Li and Yingcong Chen},
       year={2024},
       eprint={2403.20193},
       archivePrefix={arXiv},
-      primaryClass={cs.CV}
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2403.20193}, 
 }
 ``` 
 
