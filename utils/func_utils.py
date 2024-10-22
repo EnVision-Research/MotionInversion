@@ -204,12 +204,13 @@ def prepare_data(config, tokenizer):
 def prepare_params(unet, config, train_dataset):
     extra_params = {}
 
-    params = inject_motion_embeddings(
+    params,embedding_layers = inject_motion_embeddings(
         unet, 
-        sizes=config.model.motion_embeddings.dim, 
-        modules=config.model.motion_embeddings.module
+        combinations=config.model.motion_embeddings.combinations,
+        config=config
     )
 
+    config.model.embedding_layers = embedding_layers
     if config.loss.type == "DebiasedHybrid":
         if config.loss.spatial_lora_num == -1:
             config.loss.spatial_lora_num = train_dataset.__len__()

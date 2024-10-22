@@ -15,7 +15,7 @@ def is_attn(name):
 
 def unet_and_text_g_c(unet, text_encoder, unet_enable=GRADIENT_CHECKPOINTING, text_enable=TEXT_ENCODER_GRADIENT_CHECKPOINTING):
     unet._set_gradient_checkpointing(value=unet_enable)
-    text_encoder._set_gradient_checkpointing(CLIPEncoder, value=text_enable)
+    text_encoder._set_gradient_checkpointing(CLIPEncoder)
 
 def set_processors(attentions):
     for attn in attentions: attn.set_processor(AttnProcessor2_0())

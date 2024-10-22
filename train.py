@@ -33,6 +33,8 @@ from dataset import *
 from loss import *
 from noise_init import *
 
+from attn_ctrl import register_attention_control
+
 logger = get_logger(__name__, log_level="INFO")
 
 def log_validation(accelerator, config, batch, global_step, text_prompt, unet, text_encoder, vae, output_dir):
@@ -117,6 +119,7 @@ def export_to_video(video_frames, output_video_path, fps):
     for img in video_frames:
         video_writer.append_data(np.array(img))
     video_writer.close()
+    return output_video_path
 
 def create_output_folders(output_dir, config):
     out_dir = os.path.join(output_dir)
@@ -285,6 +288,15 @@ def main(config):
 
     # Load primary models
     noise_scheduler, tokenizer, text_encoder, vae, unet = load_primary_models(config.model.pretrained_model_path)
+    # Load videoCrafter2 unet for better video quality, if needed
+    if config.model.unet == 'videoCrafter2':
+        unet = UNet3DConditionModel.from_pretrained("/hpc2hdd/home/lwang592/ziyang/cache/videocrafterv2",subfolder='unet')
+    elif config.model.unet == 'zeroscope_v2_576w':
+        # by default, we use zeroscope_v2_576w, thus this unet is already loaded
+        pass
+    else:
+        raise ValueError("Invalid UNet model")
+
     freeze_models([vae, text_encoder])
     handle_memory_attention(unet)
 
@@ -347,6 +359,8 @@ def main(config):
     progress_bar = tqdm(range(global_step, config.train.max_train_steps), disable=not accelerator.is_local_main_process)
     progress_bar.set_description("Steps")
 
+    # Register the attention control, for Motion Value Embedding(s)
+    register_attention_control(unet, config=config)
     for epoch in range(first_epoch, num_train_epochs):
         train_loss_temporal = 0.0
 
@@ -443,7 +457,7 @@ def main(config):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, default='/remote-home/lzwang/projects/public/MotionInversion/configs/config.yaml')
+    parser.add_argument("--config", type=str, default='configs/config.yaml')
     parser.add_argument("--single_video_path", type=str)
     parser.add_argument("--prompts", type=str, help="JSON string of prompts")
     args = parser.parse_args()
