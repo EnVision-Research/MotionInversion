@@ -21,7 +21,7 @@ In this work, we present a novel approach for motion customization in video gene
 
 
 ## 📰 News
-* **[2024.10.22]** The website for the latest motion inversion technology is about to launch. Stay tuned!
+* **[2024.10.22]** The website for the latest version of Motion Inversion is about to launch. Stay tuned!
 * **[2024.10.20]** Hugging face demo is ready. Click [here](https://huggingface.co/spaces/ziyangmai/MotionInversion).
 * **[2024.10.15]** We improve the structure of motion embedding and obtain better performance. Check our latest [paper](https://arxiv.org/abs/2403.20193).
 * **[2024.04.03]** We released the configuration files, inference code sample.
