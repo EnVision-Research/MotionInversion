@@ -2,7 +2,7 @@
 <h4>Customize the motion in your videos under 10 minutes of training time.</h4>
 <br>
     <a href="https://arxiv.org/abs/2403.20193"><img src='https://img.shields.io/badge/arXiv-2403.20193-b31b1b.svg'></a>
-    <a href=''><img src='https://img.shields.io/badge/Project_Page-MotionInversion(Coming soon)-blue'></a>
+    <a href='https://wileewang.github.io/MotionInversion/'><img src='https://img.shields.io/badge/Project_Page-MotionInversion-blue'></a>
     <a href='https://huggingface.co/spaces/ziyangmai/MotionInversion'><img src='https://img.shields.io/badge/HuggingFace-Inference_Demo-yellow'></a>
 <!--     <a href='https://www.youtube.com/watch?v=Wq93zi8bE3U'><img src='https://img.shields.io/badge/Demo_Video-MotionDirector-red'></a> -->
 <br>
@@ -21,7 +21,7 @@ In this work, we present a novel approach for motion customization in video gene
 
 
 ## 📰 News
-* **[2024.10.22]** The website for the latest version of Motion Inversion is about to launch. Stay tuned!
+* **[2024.10.22]** The website of Motion Inversion is ready!
 * **[2024.10.20]** Hugging face demo is ready. Click [here](https://huggingface.co/spaces/ziyangmai/MotionInversion).
 * **[2024.10.15]** We improve the structure of motion embedding and obtain better performance. Check our latest [paper](https://arxiv.org/abs/2403.20193).
 * **[2024.04.03]** We released the configuration files, inference code sample.
